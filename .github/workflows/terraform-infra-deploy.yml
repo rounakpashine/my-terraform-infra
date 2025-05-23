@@ -36,6 +36,14 @@ on:
           - dev
           - staging
           - production
+      action:
+        description: "Action to perform"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
 
 env:
   TF_VERSION: "1.7.5"
@@ -206,13 +214,18 @@ jobs:
           name: tfplan-${{ github.run_id }}
           path: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Apply
+      - name: Terraform Apply or Destroy
         id: deploy
-        run: terraform apply -auto-approve tfplan
+        run: |
+          if [[ "${{ github.event.inputs.action || 'apply' }}" == "destroy" ]]; then
+            terraform destroy -auto-approve
+          else
+            terraform apply -auto-approve tfplan
+          fi
         working-directory: ${{ env.TF_WORKING_DIR }}
 
       - name: Rollback on Failure
-        if: failure()
+        if: failure() && github.event.inputs.action != 'destroy'
         run: terraform destroy -auto-approve
         working-directory: ${{ env.TF_WORKING_DIR }}
 
