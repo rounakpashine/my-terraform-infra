@@ -3,8 +3,16 @@
 # This workflow automates validation, security scanning, planning, approval, deployment,
 # and post-deployment checks for Terraform infrastructure across dev, staging, and production.
 # Comments are included throughout to explain each section and configuration.
+#
+# This workflow now uses GitHub OIDC to authenticate with AWS by assuming a role.
+# Make sure to enable the “id-token: write” permission in your repository settings.
 
 name: Terraform Infrastructure CI/CD
+
+# Set permissions required for OIDC authentication.
+permissions:
+  id-token: write
+  contents: read
 
 on:
   push:
@@ -124,11 +132,11 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # Configure AWS Credentials using OIDC by assuming a role
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::677331165940:role/test-mcp
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
@@ -185,11 +193,11 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # Configure AWS Credentials using OIDC by assuming a role
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
@@ -258,7 +266,7 @@ jobs:
 # - post_deploy: Runs automated infra tests, sends notifications, and sets up logging/monitoring.
 #
 # - Supports dev, staging, and production environments.
-# - Uses AWS credentials via secrets (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY).
-# - All secrets (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, INFRACOST_API_KEY, SLACK_WEBHOOK_URL) must be set in GitHub Actions secrets.
+# - Uses AWS credentials via OIDC by assuming a role (AWS_ROLE_ARN) for authentication.
+# - All secrets (AWS_ROLE_ARN, INFRACOST_API_KEY, SLACK_WEBHOOK_URL) must be set in GitHub Actions secrets.
 # - Each section is commented for clarity.
 # -------------------------------------------
