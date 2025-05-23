@@ -176,13 +176,13 @@ jobs:
           name: tfplan-${{ github.run_id }}
           path: ${{ env.TF_WORKING_DIR }}/tfplan
 
-      # Cost Estimation (Infracost)
+      # Cost Estimation (Infracost, fallback to CLI due to action.yml error)
       - name: Cost Estimation
-        uses: infracost/actions@v3
-        with:
-          path: ${{ env.TF_WORKING_DIR }}
-          terraform_plan: ${{ env.TF_WORKING_DIR }}/tfplan
-          api_key: ${{ env.COST_ESTIMATION_API_KEY }}
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+          infracost breakdown --path=${{ env.TF_WORKING_DIR }}/tfplan --terraform-plan-flags="-input=false" --api-key=${{ env.COST_ESTIMATION_API_KEY }} --format table
+        env:
+          INFRACOST_API_KEY: ${{ env.COST_ESTIMATION_API_KEY }}
 
   approval:
     name: Manual Approval (Production Only)
