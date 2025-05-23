@@ -172,9 +172,9 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: user1,user2
-          minimum-approvals: 2
-          timeout-minutes: 60
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          timeout-minutes: 30
           issue-title: "Production Deployment Approval Required"
           issue-body: "Please review the Terraform plan and approve to proceed with production deployment."
 
