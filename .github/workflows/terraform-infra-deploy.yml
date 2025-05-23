@@ -154,13 +154,13 @@ jobs:
           name: tfplan-${{ github.run_id }}
           path: ${{ env.TF_WORKING_DIR }}/tfplan
 
-      - name: Cost Estimation
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-          terraform show -json ${{ env.TF_WORKING_DIR }}/tfplan > ${{ env.TF_WORKING_DIR }}/plan.json
-          infracost breakdown --path=${{ env.TF_WORKING_DIR }}/plan.json --format table --sync-usage-file
-        env:
-          INFRACOST_API_KEY: ${{ env.COST_ESTIMATION_API_KEY }}
+      # - name: Cost Estimation
+      #   run: |
+      #     curl -sSfL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+      #     terraform show -json ${{ env.TF_WORKING_DIR }}/tfplan > ${{ env.TF_WORKING_DIR }}/plan.json
+      #     infracost breakdown --path=${{ env.TF_WORKING_DIR }}/plan.json --format table --sync-usage-file
+      #   env:
+      #     INFRACOST_API_KEY: ${{ env.COST_ESTIMATION_API_KEY }}
 
   approval:
     name: Manual Approval (Production Only)
