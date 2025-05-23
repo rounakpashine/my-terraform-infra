@@ -112,15 +112,15 @@ jobs:
         with:
           working_directory: ${{ env.TF_WORKING_DIR }}
 
-      # Terrascan
-      - name: Run Terrascan
-        uses: accurics/terrascan-action@v1.3.2
-        with:
-          iac_type: 'terraform'
-          iac_version: 'v14'
-          policy_type: 'aws'
-          only_warn: true
-          iac_dir: ${{ env.TF_WORKING_DIR }}
+      # Terrascan (disabled: action no longer available)
+      # - name: Run Terrascan
+      #   uses: accurics/terrascan-action@v1.3.2
+      #   with:
+      #     iac_type: 'terraform'
+      #     iac_version: 'v14'
+      #     policy_type: 'aws'
+      #     only_warn: true
+      #     iac_dir: ${{ env.TF_WORKING_DIR }}
 
       # Secret Detection
       - name: Secret Detection
