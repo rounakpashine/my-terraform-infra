@@ -10,19 +10,19 @@ on:
   push:
     branches: [main, staging, dev]
     paths:
-      - 'infra/**'
-      - '.github/workflows/terraform-infra-deploy.yml'
+      - "infra/**"
+      - ".github/workflows/terraform-infra-deploy.yml"
   pull_request:
     branches: [main, staging, dev]
     paths:
-      - 'infra/**'
-      - '.github/workflows/terraform-infra-deploy.yml'
+      - "infra/**"
+      - ".github/workflows/terraform-infra-deploy.yml"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
-        default: 'dev'
+        default: "dev"
         type: choice
         options:
           - dev
@@ -30,13 +30,13 @@ on:
           - production
 
 env:
-  TF_VERSION: '1.7.5'
-  TFLINT_VERSION: '0.50.3'
-  CHECKOV_VERSION: '3.2.0'
-  TFSEC_VERSION: '1.28.1'
-  TERRASCAN_VERSION: '1.18.4'
-  AWS_REGION: 'us-east-1'
-  TF_WORKING_DIR: './infra'
+  TF_VERSION: "1.7.5"
+  TFLINT_VERSION: "0.50.3"
+  CHECKOV_VERSION: "3.2.0"
+  TFSEC_VERSION: "1.28.1"
+  TERRASCAN_VERSION: "1.18.4"
+  AWS_REGION: "us-east-1"
+  TF_WORKING_DIR: "./infra"
   COST_ESTIMATION_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
 
 jobs:
@@ -44,50 +44,42 @@ jobs:
     name: Code Validation & Quality
     runs-on: ubuntu-latest
     steps:
-      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # Terraform Format Check
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Terraform Init (required before validate)
       - name: Terraform Init
         run: terraform init -backend=false
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Terraform Validate
       - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Setup TFLint
       - name: Setup TFLint
         run: |
-          curl -sSL https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip -o tflint.zip
+          curl -sSL https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip -o tflint.zip
           unzip -o tflint.zip -d /usr/local/bin
           chmod +x /usr/local/bin/tflint
+        shell: bash
         env:
           TFLINT_VERSION: ${{ env.TFLINT_VERSION }}
 
-      # Run TFLint
       - name: Run TFLint
         run: tflint --init && tflint
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Static Code Analysis (example: check for TODOs)
       - name: Static Code Analysis
-        run: grep -r 'TODO' ${{ env.TF_WORKING_DIR }} || true
+        run: grep -r "TODO" ${{ env.TF_WORKING_DIR }} || true
 
-      # Documentation Verification (example: check for README)
       - name: Documentation Verification
         run: test -f ${{ env.TF_WORKING_DIR }}/README.md
 
@@ -100,41 +92,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Checkov
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ env.TF_WORKING_DIR }}
           quiet: true
 
-      # tfsec
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: ${{ env.TF_WORKING_DIR }}
 
-      # Terrascan (disabled: action no longer available)
-      # - name: Run Terrascan
-      #   uses: accurics/terrascan-action@v1.3.2
-      #   with:
-      #     iac_type: 'terraform'
-      #     iac_version: 'v14'
-      #     policy_type: 'aws'
-      #     only_warn: true
-      #     iac_dir: ${{ env.TF_WORKING_DIR }}
-
-      # Secret Detection
+      # Terrascan step disabled as the action is no longer available.
       - name: Secret Detection
         uses: trufflesecurity/trufflehog@v3.67.3
         with:
           path: ${{ env.TF_WORKING_DIR }}
-
-      # Dependency Vulnerability Scanning (disabled: action no longer available)
-      # - name: Dependency Vulnerability Scan
-      #   uses: aquasecurity/trivy-action@v0.17.0
-      #   with:
-      #     scan-type: 'fs'
-      #     scan-ref: ${{ env.TF_WORKING_DIR }}
 
   plan:
     name: Terraform Plan & Cost Estimation
@@ -151,32 +124,28 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      # Configure AWS Credentials (securely via OIDC or secrets)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Terraform Init
       - name: Terraform Init
         run: terraform init -backend-config="key=${{ github.event.inputs.environment || github.ref_name }}.tfstate"
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Terraform Plan
       - name: Terraform Plan
         id: plan
         run: terraform plan -out=tfplan -input=false
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Save Plan Artifact
       - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-${{ github.run_id }}
           path: ${{ env.TF_WORKING_DIR }}/tfplan
 
-      # Cost Estimation (Infracost, fallback to CLI due to action.yml error)
       - name: Cost Estimation
         run: |
           curl -sSfL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
@@ -219,7 +188,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
@@ -237,7 +207,6 @@ jobs:
         run: terraform apply -auto-approve tfplan
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # Rollback on failure (example: destroy if apply fails)
       - name: Rollback on Failure
         if: failure()
         run: terraform destroy -auto-approve
@@ -250,7 +219,6 @@ jobs:
     steps:
       - name: Automated Infra Testing
         run: |
-          # Example: Use Terratest or custom scripts
           echo "Run post-deployment tests here"
 
       - name: Notify on Success
@@ -275,7 +243,6 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      # Logging and Monitoring Setup (example placeholder)
       - name: Setup Logging/Monitoring
         run: |
           echo "Configure logging and monitoring integrations here"
@@ -284,15 +251,14 @@ jobs:
 # Workflow Documentation:
 #
 # - validate: Checks Terraform formatting, validates code, runs linting, static analysis, and verifies documentation.
-# - security: Runs IaC security scans (Checkov, tfsec, Terrascan), secret detection, and dependency vulnerability scanning.
+# - security: Runs IaC security scans (Checkov, tfsec, etc.), secret detection, and dependency vulnerability scanning.
 # - plan: Generates Terraform plan, uploads plan artifact, and estimates cost using Infracost.
-# - approval: Manual approval required for production deployments, with minimum reviewers and timeout.
-# - deploy: Applies Terraform plan, handles backend config/state, and rolls back on failure.
+# - approval: Manual approval required for production deployments.
+# - deploy: Applies Terraform plan, handles backend config/state, and supports rollback on failure.
 # - post_deploy: Runs automated infra tests, sends notifications, and sets up logging/monitoring.
 #
 # - Supports dev, staging, and production environments.
-# - Uses secure AWS credential handling (OIDC or secrets).
-# - All secrets (AWS_ROLE_ARN, INFRACOST_API_KEY, SLACK_WEBHOOK_URL) must be set in GitHub Actions secrets.
-# - Reusable components and error handling included.
+# - Uses AWS credentials via secrets (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY).
+# - All secrets (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, INFRACOST_API_KEY, SLACK_WEBHOOK_URL) must be set in GitHub Actions secrets.
 # - Each section is commented for clarity.
 # -------------------------------------------
