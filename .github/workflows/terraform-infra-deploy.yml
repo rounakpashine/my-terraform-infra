@@ -71,9 +71,12 @@ jobs:
 
       # Setup TFLint
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: ${{ env.TFLINT_VERSION }}
+        run: |
+          curl -sSL https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip -o tflint.zip
+          unzip -o tflint.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/tflint
+        env:
+          TFLINT_VERSION: ${{ env.TFLINT_VERSION }}
 
       # Run TFLint
       - name: Run TFLint
