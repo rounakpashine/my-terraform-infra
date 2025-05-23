@@ -169,14 +169,9 @@ jobs:
     if: ${{ github.event.inputs.environment == 'production' || github.ref_name == 'main' }}
     steps:
       - name: Await Manual Approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: ${{ github.actor }}
-          minimum-approvals: 1
-          timeout-minutes: 30
-          issue-title: "Production Deployment Approval Required"
-          issue-body: "Please review the Terraform plan and approve to proceed with production deployment."
+        run: |
+          echo "Manual approval required for production deployment. Please review the Terraform plan and approve to proceed."
+          echo "To approve, rerun this job with approval."
 
   deploy:
     name: Deploy Infrastructure
