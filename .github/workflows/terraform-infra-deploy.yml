@@ -157,7 +157,8 @@ jobs:
       - name: Cost Estimation
         run: |
           curl -sSfL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-          infracost breakdown --path=${{ env.TF_WORKING_DIR }}/tfplan --terraform-plan-flags="-input=false" --api-key=${{ env.COST_ESTIMATION_API_KEY }} --format table
+          terraform show -json ${{ env.TF_WORKING_DIR }}/tfplan > ${{ env.TF_WORKING_DIR }}/plan.json
+          infracost breakdown --path=${{ env.TF_WORKING_DIR }}/plan.json --format table
         env:
           INFRACOST_API_KEY: ${{ env.COST_ESTIMATION_API_KEY }}
 
