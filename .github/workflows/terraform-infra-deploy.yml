@@ -128,12 +128,12 @@ jobs:
         with:
           path: ${{ env.TF_WORKING_DIR }}
 
-      # Dependency Vulnerability Scanning
-      - name: Dependency Vulnerability Scan
-        uses: aquasecurity/trivy-action@v0.17.0
-        with:
-          scan-type: 'fs'
-          scan-ref: ${{ env.TF_WORKING_DIR }}
+      # Dependency Vulnerability Scanning (disabled: action no longer available)
+      # - name: Dependency Vulnerability Scan
+      #   uses: aquasecurity/trivy-action@v0.17.0
+      #   with:
+      #     scan-type: 'fs'
+      #     scan-ref: ${{ env.TF_WORKING_DIR }}
 
   plan:
     name: Terraform Plan & Cost Estimation
